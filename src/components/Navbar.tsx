@@ -1,14 +1,9 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import { Sun, Moon, PenLine, Github } from "lucide-react";
-import { useEffect, useState } from "react";
+import { PenLine, Github } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggleBtn";
 
 export function Navbar() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -30,7 +25,7 @@ export function Navbar() {
           {/* Right actions */}
           <div className="flex items-center gap-2">
             <a
-              href="https://github.com"
+              href="https://github.com/UjangSutejo/handwriting-ai"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent"
@@ -40,19 +35,7 @@ export function Navbar() {
             </a>
 
             {/* Theme toggle */}
-            {mounted && (
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
-                aria-label="Toggle theme"
-              >
-                {theme === "dark" ? (
-                  <Sun className="w-4 h-4" />
-                ) : (
-                  <Moon className="w-4 h-4" />
-                )}
-              </button>
-            )}
+            <ThemeToggle />
           </div>
         </div>
       </div>

@@ -117,7 +117,7 @@ export function UploadZone({
                     "w-14 h-14 rounded-2xl flex items-center justify-center transition-all",
                     isDragActive
                       ? "bg-primary text-primary-foreground scale-110"
-                      : "bg-accent text-muted-foreground"
+                      : "bg-slate-800 text-muted-foreground"
                   )}
                 >
                   <Upload className="w-6 h-6" />
@@ -161,7 +161,7 @@ export function UploadZone({
                     className="w-full max-h-64 object-contain"
                   />
                 )}
-                
+
                 {/* Overlay on hover */}
                 {!isLoading && (
                   <button
@@ -202,10 +202,10 @@ export function UploadZone({
                     {progress < 30
                       ? "Memuat gambar ke AI..."
                       : progress < 60
-                      ? "Mengidentifikasi mata pelajaran..."
-                      : progress < 85
-                      ? "Menyusun solusi step-by-step..."
-                      : "Memfinalisasi jawaban..."}
+                        ? "Mengidentifikasi mata pelajaran..."
+                        : progress < 85
+                          ? "Menyusun solusi step-by-step..."
+                          : "Memfinalisasi jawaban..."}
                   </div>
                 </div>
               )}

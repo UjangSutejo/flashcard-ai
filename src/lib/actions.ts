@@ -1,10 +1,8 @@
 "use server";
 
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 const SYSTEM_PROMPT = `Kamu adalah tutor Indonesia super teliti dan sabar untuk siswa SMP/SMA. Analisis gambar soal homework ini dengan teliti.
 
@@ -29,10 +27,10 @@ Langsung mulai analisis dari gambar.`;
 export async function solveHomework(
   formData: FormData
 ): Promise<{ solution?: string; error?: string }> {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     return {
       error:
-        "OPENAI_API_KEY belum diset. Tambahkan ke .env.local dan restart server.",
+        "GEMINI_API_KEY belum diset. Tambahkan ke .env.local dan restart server.",
     };
   }
 
@@ -69,38 +67,24 @@ export async function solveHomework(
     : "image/jpeg";
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000); // 55s timeout
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash-lite",
+      generationConfig: {
+        maxOutputTokens: 2000,
+      }
+    });
 
-    const response = await client.chat.completions.create(
+    const result = await model.generateContent([
+      SYSTEM_PROMPT,
       {
-        model: "gpt-4o",
-        max_tokens: 2000,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${safeMediaType};base64,${base64}`,
-                  detail: "high",
-                },
-              },
-              {
-                type: "text",
-                text: SYSTEM_PROMPT,
-              },
-            ],
-          },
-        ],
+        inlineData: {
+          data: base64,
+          mimeType: safeMediaType,
+        },
       },
-      { signal: controller.signal }
-    );
+    ]);
 
-    clearTimeout(timeout);
-
-    const text = response.choices[0]?.message?.content;
+    const text = result.response.text();
     if (!text) {
       return { error: "AI tidak memberikan jawaban. Coba lagi." };
     }
@@ -118,29 +102,23 @@ export async function solveHomework(
 
     return { solution: text };
   } catch (err: unknown) {
-    console.error("OpenAI error:", err);
+    console.error("Gemini error:", err);
 
     if (err instanceof Error) {
-      if (err.name === "AbortError" || err.message.includes("timeout")) {
+      if (err.message.includes("finishReason: SAFETY")) {
         return {
-          error:
-            "AI timeout setelah 55 detik. Coba lagi atau gunakan gambar yang lebih sederhana.",
+          error: "Konten diblokir oleh filter keamanan Google. Pastikan gambar tidak melanggar kebijakan.",
         };
       }
-      if (err.message.includes("rate_limit")) {
+      if (err.message.includes("quota") || err.message.includes("429")) {
         return {
-          error: "API rate limit tercapai. Tunggu beberapa menit dan coba lagi.",
-        };
-      }
-      if (err.message.includes("insufficient_quota")) {
-        return {
-          error: "Kuota OpenAI habis. Periksa billing akun Anda.",
+          error: "Kuota Gemini habis atau rate limit tercapai. Tunggu beberapa menit.",
         };
       }
     }
 
     return {
-      error: "Gagal menghubungi AI. Periksa koneksi dan API key Anda.",
+      error: "Gagal menghubungi AI (Gemini). Periksa koneksi dan API key Anda.",
     };
   }
 }

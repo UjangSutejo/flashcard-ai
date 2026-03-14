@@ -7,6 +7,7 @@ import { UploadZone } from "@/components/UploadZone";
 import { SolutionViewer } from "@/components/SolutionViewer";
 import { HandwritingPreview } from "@/components/HandwritingPreview";
 import { StepIndicator } from "@/components/StepIndicator";
+import { InfiniteGrid } from "@/components/infinite-grid-background";
 import { solveHomework } from "@/lib/actions";
 import { BookOpen, Sparkles, PenLine } from "lucide-react";
 
@@ -135,14 +136,8 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-slate-950 dark:via-blue-950/20 dark:to-slate-950">
-      {/* Background grid pattern */}
-      <div 
-        className="fixed inset-0 opacity-[0.025] dark:opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234b83d0' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
+    <div className="min-h-screen">
+      <InfiniteGrid />
 
       <Navbar />
 
@@ -152,7 +147,7 @@ export default function Home() {
           <div className="text-center mb-10 animate-fade-in">
             <div className="inline-flex items-center gap-2 bg-primary/10 dark:bg-primary/20 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-4">
               <Sparkles className="w-3.5 h-3.5" />
-              Powered by GPT-4o Vision
+              Powered by Gemini 2.5 Pro
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3 leading-tight">
               Selesaikan PR{" "}
@@ -170,7 +165,7 @@ export default function Home() {
               {[
                 { icon: BookOpen, text: "Semua Mata Pelajaran" },
                 { icon: PenLine, text: "Tulisan Tangan Realistis" },
-                { icon: Sparkles, text: "AI GPT-4o Vision" },
+                { icon: Sparkles, text: "AI Gemini 2.5 Pro" },
               ].map(({ icon: Icon, text }) => (
                 <span
                   key={text}
