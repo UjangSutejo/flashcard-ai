@@ -15,7 +15,7 @@ export function Navbar() {
               <PenLine className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
             <span className="font-bold text-lg text-foreground tracking-tight">
-              HandwriteAI
+              FlashcardAI
             </span>
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
               Beta

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, FileRejection } from "react-dropzone";
 import { toast } from "sonner";
 import { Upload, Image, X, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,7 @@ export function UploadZone({
   step,
 }: UploadZoneProps) {
   const onDrop = useCallback(
-    (acceptedFiles: File[], rejectedFiles: { file: File; errors: { code: string; message: string }[] }[]) => {
+    (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
       if (rejectedFiles.length > 0) {
         const err = rejectedFiles[0].errors[0];
         if (err.code === "file-too-large") {
@@ -212,7 +212,7 @@ export function UploadZone({
               )}
 
               {/* Tips */}
-              {!isSolving && step !== "solution" && (
+              {!isSolving && step !== "flashcards" && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-400">
@@ -224,7 +224,7 @@ export function UploadZone({
               {/* Action buttons */}
               {!isSolving && (
                 <div className="flex gap-2">
-                  {step !== "solution" && (
+                  {step !== "flashcards" && (
                     <button
                       onClick={onSolve}
                       disabled={isLoading}
@@ -240,7 +240,7 @@ export function UploadZone({
                     className="flex items-center justify-center gap-2 border border-border hover:bg-accent disabled:opacity-60 text-muted-foreground hover:text-foreground text-sm py-2.5 px-4 rounded-xl transition-all"
                   >
                     <X className="w-4 h-4" />
-                    {step === "solution" ? "Ganti Foto" : "Hapus"}
+                    {step === "flashcards" ? "Ganti Foto" : "Hapus"}
                   </button>
                 </div>
               )}

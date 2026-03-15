@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { FileText, Copy, Check, ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -20,6 +20,7 @@ interface ParsedFlashcard {
   options: Record<OptionKey, string | null>;
   correct?: OptionKey;
   explanation?: string;
+  isValid?: boolean;
 }
 
 function parseFlashcards(content: string): ParsedFlashcard[] {
@@ -32,60 +33,88 @@ function parseFlashcards(content: string): ParsedFlashcard[] {
     return [];
   }
 
-  return parts.map((raw) => {
-    const lines = raw.split("\n").map((l) => l.trim());
-    let question = "";
-    const options: Record<OptionKey, string | null> = {
-      A: null,
-      B: null,
-      C: null,
-      D: null,
-    };
-    let correct: OptionKey | undefined;
-    let explanationLines: string[] = [];
+  return parts
+    .map((raw) => {
+      const lines = raw.split("\n").map((l) => l.trim());
+      let question = "";
+      const options: Record<OptionKey, string | null> = {
+        A: null,
+        B: null,
+        C: null,
+        D: null,
+      };
+      let correct: OptionKey | undefined;
+      let explanationLines: string[] = [];
+      let hasQuestionOrOption = false;
 
-    for (const line of lines) {
-      if (line.toLowerCase().startsWith("pertanyaan:")) {
-        question = line.slice("pertanyaan:".length).trim();
-      } else if (/^opsi\s*a:/i.test(line)) {
-        options.A = line.replace(/^opsi\s*a:/i, "").trim();
-      } else if (/^opsi\s*b:/i.test(line)) {
-        options.B = line.replace(/^opsi\s*b:/i, "").trim();
-      } else if (/^opsi\s*c:/i.test(line)) {
-        options.C = line.replace(/^opsi\s*c:/i, "").trim();
-      } else if (/^opsi\s*d:/i.test(line)) {
-        options.D = line.replace(/^opsi\s*d:/i, "").trim();
-      } else if (/^jawaban benar:/i.test(line)) {
-        const val = line.replace(/^jawaban benar:/i, "").trim().toUpperCase();
-        if (val === "A" || val === "B" || val === "C" || val === "D") {
-          correct = val;
+      for (const line of lines) {
+        if (line.toLowerCase().startsWith("pertanyaan:")) {
+          question = line.slice("pertanyaan:".length).trim();
+          hasQuestionOrOption = true;
+        } else if (/^opsi\s*a:/i.test(line)) {
+          options.A = line.replace(/^opsi\s*a:/i, "").trim();
+          hasQuestionOrOption = true;
+        } else if (/^opsi\s*b:/i.test(line)) {
+          options.B = line.replace(/^opsi\s*b:/i, "").trim();
+          hasQuestionOrOption = true;
+        } else if (/^opsi\s*c:/i.test(line)) {
+          options.C = line.replace(/^opsi\s*c:/i, "").trim();
+          hasQuestionOrOption = true;
+        } else if (/^opsi\s*d:/i.test(line)) {
+          options.D = line.replace(/^opsi\s*d:/i, "").trim();
+          hasQuestionOrOption = true;
+        } else if (/^jawaban benar:/i.test(line)) {
+          const val = line.replace(/^jawaban benar:/i, "").trim().toUpperCase();
+          if (val === "A" || val === "B" || val === "C" || val === "D") {
+            correct = val;
+            hasQuestionOrOption = true;
+          }
+        } else if (line.toLowerCase().startsWith("pembahasan:")) {
+          explanationLines.push(line.slice("pembahasan:".length).trim());
+        } else if (explanationLines.length > 0) {
+          // baris lanjutan pembahasan
+          explanationLines.push(line);
         }
-      } else if (line.toLowerCase().startsWith("pembahasan:")) {
-        explanationLines.push(line.slice("pembahasan:".length).trim());
-      } else if (explanationLines.length > 0) {
-        // baris lanjutan pembahasan
-        explanationLines.push(line);
       }
-    }
 
-    return {
-      raw,
-      question: question || raw,
-      options,
-      correct,
-      explanation: explanationLines.join("\n").trim() || undefined,
-    };
-  });
+      return {
+        raw,
+        question: question || raw,
+        options,
+        correct,
+        explanation: explanationLines.join("\n").trim() || undefined,
+        isValid: hasQuestionOrOption,
+      };
+    })
+    .filter((card) => card.isValid);
 }
 
 export function FlashcardPreview({ content }: FlashcardPreviewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<OptionKey | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<
+    Record<number, { selected: OptionKey; isCorrect: boolean }>
+  >({});
+  const [showResult, setShowResult] = useState(false);
 
   const flashcards = useMemo(() => parseFlashcards(content), [content]);
 
   const current = flashcards[currentIndex];
+
+  const totalQuestions = flashcards.length;
+  const totalCorrect = useMemo(
+    () => Object.values(answers).filter((a) => a.isCorrect).length,
+    [answers]
+  );
+  const allAnswered = totalQuestions > 0 && Object.keys(answers).length === totalQuestions;
+  const scorePercentage =
+    totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+  useEffect(() => {
+    if (allAnswered) {
+      setShowResult(true);
+    }
+  }, [allAnswered]);
 
   const handleCopy = async () => {
     if (!current) return;
@@ -97,18 +126,29 @@ export function FlashcardPreview({ content }: FlashcardPreviewProps) {
 
   const handleSelect = (key: OptionKey) => {
     if (!current) return;
-    setSelectedOption(key);
+
+    // Jika soal ini sudah dijawab, kunci jawaban (tidak bisa diubah)
+    if (answers[currentIndex]) return;
+
+    setAnswers((prev) => {
+      const isCorrectNow = !!(current.correct && key === current.correct);
+      return {
+        ...prev,
+        [currentIndex]: { selected: key, isCorrect: isCorrectNow },
+      };
+    });
   };
 
   const resetStateForCard = (nextIndex: number) => {
     setCurrentIndex(nextIndex);
-    setSelectedOption(null);
   };
 
   if (!content.trim() || flashcards.length === 0) return null;
 
-  const isCorrect = selectedOption && current?.correct && selectedOption === current.correct;
-  const hasAnswered = selectedOption !== null;
+  const currentAnswer = answers[currentIndex];
+  const selectedOption = currentAnswer?.selected ?? null;
+  const hasAnswered = !!currentAnswer;
+  const isCorrect = !!currentAnswer?.isCorrect;
 
   return (
     <div className="animate-slide-up">
@@ -121,11 +161,13 @@ export function FlashcardPreview({ content }: FlashcardPreviewProps) {
             </div>
             <div>
               <h2 className="font-semibold text-sm text-foreground">
-                Latihan Pilihan Ganda
+                {showResult ? "Hasil Latihan" : "Latihan Pilihan Ganda"}
               </h2>
-              <p className="text-[11px] text-muted-foreground">
-                Soal {currentIndex + 1} dari {flashcards.length}
-              </p>
+              {!showResult && (
+                <p className="text-[11px] text-muted-foreground">
+                  Soal {currentIndex + 1} dari {flashcards.length}
+                </p>
+              )}
             </div>
           </div>
 
@@ -155,64 +197,143 @@ export function FlashcardPreview({ content }: FlashcardPreviewProps) {
 
         {/* Card content */}
         <div className="p-5 space-y-4">
-          {/* Question */}
-          <div className="rounded-xl border border-border/80 bg-background/70 dark:bg-slate-900/60 px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-              Pertanyaan
-            </p>
-            <div className="prose-solution text-sm text-foreground leading-relaxed">
-              <ReactMarkdown
-                remarkPlugins={[remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-              >
-                {current?.question || ""}
-              </ReactMarkdown>
+          {/* Result screen (separate view after quiz finished) */}
+          {totalQuestions > 0 && showResult && (
+            <div className="rounded-2xl border border-border/70 bg-gradient-to-r from-sky-500/10 via-emerald-500/5 to-blue-500/10 px-4 py-3.5 flex items-center gap-4">
+              <div className="relative flex items-center justify-center w-16 h-16">
+                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
+                  <circle
+                    className="text-sky-200 dark:text-slate-700"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="transparent"
+                    r="16"
+                    cx="18"
+                    cy="18"
+                  />
+                  <circle
+                    className={cn(
+                      "transition-all duration-500 ease-out",
+                      scorePercentage >= 80
+                        ? "text-emerald-500"
+                        : scorePercentage >= 50
+                          ? "text-sky-500"
+                          : "text-amber-400"
+                    )}
+                    stroke="currentColor"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    fill="transparent"
+                    r="16"
+                    cx="18"
+                    cy="18"
+                    strokeDasharray={`${2 * Math.PI * 16}`}
+                    strokeDashoffset={`${2 * Math.PI * 16 * (1 - scorePercentage / 100)}`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-[11px] leading-tight">
+                  <span className="font-semibold text-foreground">{scorePercentage}</span>
+                  <span className="text-[10px] text-muted-foreground">nilai</span>
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-1.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Quiz selesai
+                </p>
+                <p className="text-sm font-semibold text-foreground">
+                  {totalCorrect} benar dari {totalQuestions} soal
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Mantap! Kamu sudah menyelesaikan semua soal pada sesi ini.
+                </p>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentIndex(0);
+                      setAnswers({});
+                      setShowResult(false);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    Mulai ulang latihan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowResult(false)}
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  >
+                    Lihat kembali soal
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Question */}
+          {!showResult && (
+            <div className="rounded-xl border border-border/80 bg-background/70 dark:bg-slate-900/60 px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Pertanyaan
+              </p>
+              <div className="prose-solution text-sm text-foreground leading-relaxed">
+                <ReactMarkdown
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {current?.question || ""}
+                </ReactMarkdown>
+              </div>
+            </div>
+          )}
 
           {/* Options */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Pilih jawaban yang menurutmu benar
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-              {(["A", "B", "C", "D"] as OptionKey[]).map((key) => {
-                const label = current?.options[key];
-                if (!label) return null;
+          {!showResult && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Pilih jawaban yang menurutmu benar
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {(["A", "B", "C", "D"] as OptionKey[]).map((key) => {
+                  const label = current?.options[key];
+                  if (!label) return null;
 
-                const isSelected = selectedOption === key;
-                const isOptionCorrect = current?.correct === key;
+                  const isSelected = selectedOption === key;
+                  const isOptionCorrect = current?.correct === key;
 
-                const baseClass =
-                  "w-full flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm text-left transition-all";
+                  const baseClass =
+                    "w-full flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm text-left transition-all";
 
-                const stateClass = !hasAnswered
-                  ? "border-border bg-card hover:bg-accent/70 cursor-pointer"
-                  : isOptionCorrect
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100"
-                    : isSelected
-                      ? "border-red-500 bg-red-500/10 text-red-900 dark:text-red-100"
-                      : "border-border bg-card text-muted-foreground";
+                  const stateClass = !hasAnswered
+                    ? "border-border bg-card hover:bg-accent/70 cursor-pointer"
+                    : isOptionCorrect
+                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100"
+                      : isSelected
+                        ? "border-red-500 bg-red-500/10 text-red-900 dark:text-red-100"
+                        : "border-border bg-card text-muted-foreground";
 
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleSelect(key)}
-                    className={cn(baseClass, stateClass)}
-                  >
-                    <span className="mt-0.5 text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center border border-border bg-background">
-                      {key}
-                    </span>
-                    <span className="flex-1 text-left">{label}</span>
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleSelect(key)}
+                      className={cn(baseClass, stateClass)}
+                    >
+                      <span className="mt-0.5 text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center border border-border bg-background">
+                        {key}
+                      </span>
+                      <span className="flex-1 text-left">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Feedback & explanation */}
-          {hasAnswered && current?.correct && (
+          {!showResult && hasAnswered && current?.correct && (
             <div
               className={cn(
                 "mt-1 rounded-xl border px-3.5 py-3 text-xs leading-relaxed",

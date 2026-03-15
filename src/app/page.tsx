@@ -157,6 +157,17 @@ export default function Home() {
 
         {/* Main content */}
         <div className="space-y-6">
+          {/* Upload zone */}
+          <UploadZone
+            onFileAccepted={handleFileAccepted}
+            uploadedFile={uploadedFile}
+            previewUrl={previewUrl}
+            onSolve={handleSolve}
+            onReset={handleReset}
+            isLoading={isLoading}
+            progress={solveProgress}
+            step={step}
+          />
           {/* Flashcard options */}
           <div className="bg-card rounded-2xl border border-border paper-shadow overflow-hidden animate-slide-up">
             <div className="p-4 border-b border-border/50">
@@ -258,19 +269,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-
-          {/* Upload zone */}
-          <UploadZone
-            onFileAccepted={handleFileAccepted}
-            uploadedFile={uploadedFile}
-            previewUrl={previewUrl}
-            onSolve={handleSolve}
-            onReset={handleReset}
-            isLoading={isLoading}
-            progress={solveProgress}
-            step={step}
-          />
-
           {/* Flashcard preview */}
           {step === "flashcards" && solution && (
             <FlashcardPreview content={solution} />
