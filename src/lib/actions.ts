@@ -144,7 +144,7 @@ export async function generateFlashcards(
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-lite",
       generationConfig: {
-        maxOutputTokens: 2000,
+        maxOutputTokens: 5000,
       }
     });
 
