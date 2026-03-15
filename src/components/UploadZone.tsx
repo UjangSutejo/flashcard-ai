@@ -18,7 +18,7 @@ interface UploadZoneProps {
   step: Step;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 
 export function UploadZone({
   onFileAccepted,
@@ -36,7 +36,7 @@ export function UploadZone({
         const err = rejectedFiles[0].errors[0];
         if (err.code === "file-too-large") {
           toast.error("File terlalu besar!", {
-            description: "Maksimal 5MB. Kompres gambar atau ambil foto yang lebih kecil.",
+            description: "Maksimal 15MB. Kompres gambar atau ambil foto yang lebih kecil.",
           });
         } else if (err.code === "file-invalid-type") {
           toast.error("Format tidak didukung!", {
@@ -53,7 +53,7 @@ export function UploadZone({
 
       if (file.size > MAX_FILE_SIZE) {
         toast.error("File terlalu besar!", {
-          description: `Ukuran: ${(file.size / 1024 / 1024).toFixed(1)}MB. Maksimal 5MB.`,
+          description: `Ukuran: ${(file.size / 1024 / 1024).toFixed(1)}MB. Maksimal 15MB.`,
         });
         return;
       }
@@ -75,8 +75,9 @@ export function UploadZone({
       "image/webp": [".webp"],
       "image/heic": [".heic"],
       "image/heif": [".heif"],
+      "application/pdf": [".pdf"],
     },
-    maxFiles: 1,
+    maxFiles: 5,
     maxSize: MAX_FILE_SIZE,
     disabled: isLoading,
   });
@@ -92,7 +93,7 @@ export function UploadZone({
               <Image className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="font-semibold text-sm text-foreground">
-              Upload Soal PR
+              Upload Materi Belajar
             </h2>
           </div>
         </div>
@@ -117,7 +118,7 @@ export function UploadZone({
                     "w-14 h-14 rounded-2xl flex items-center justify-center transition-all",
                     isDragActive
                       ? "bg-primary text-primary-foreground scale-110"
-                      : "bg-slate-800 text-muted-foreground"
+                      : "dark:bg-slate-800 bg-muted text-muted-foreground"
                   )}
                 >
                   <Upload className="w-6 h-6" />
@@ -125,7 +126,7 @@ export function UploadZone({
 
                 <div>
                   <p className="font-semibold text-foreground mb-1">
-                    {isDragActive ? "Lepaskan di sini!" : "Upload foto soal PR"}
+                    {isDragActive ? "Lepaskan di sini!" : "Upload materi belajar"}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Drag & drop atau{" "}
@@ -136,7 +137,7 @@ export function UploadZone({
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-1.5 mt-1">
-                  {["JPG", "PNG", "WEBP", "HEIC"].map((fmt) => (
+                  {["JPG", "PNG", "WEBP", "HEIC", "PDF"].map((fmt) => (
                     <span
                       key={fmt}
                       className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full"
@@ -145,7 +146,7 @@ export function UploadZone({
                     </span>
                   ))}
                   <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                    Maks. 5MB
+                    Maks. 15MB
                   </span>
                 </div>
               </div>
@@ -186,7 +187,7 @@ export function UploadZone({
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                      <span>AI sedang menganalisis soal...</span>
+                      <span>AI sedang membuat flashcard...</span>
                     </div>
                     <span className="font-mono text-primary">{Math.round(progress)}%</span>
                   </div>
@@ -200,12 +201,12 @@ export function UploadZone({
                   </div>
                   <div className="text-[11px] text-muted-foreground text-center">
                     {progress < 30
-                      ? "Memuat gambar ke AI..."
+                      ? "Memuat materi ke AI..."
                       : progress < 60
                         ? "Mengidentifikasi mata pelajaran..."
                         : progress < 85
-                          ? "Menyusun solusi step-by-step..."
-                          : "Memfinalisasi jawaban..."}
+                          ? "Membuat flashcard..."
+                          : "Memfinalisasi flashcard..."}
                   </div>
                 </div>
               )}
@@ -230,7 +231,7 @@ export function UploadZone({
                       className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed text-primary-foreground font-medium text-sm py-2.5 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md glow-blue"
                     >
                       <Sparkles className="w-4 h-4" />
-                      Selesaikan dengan AI
+                      Buat Flashcard
                     </button>
                   )}
                   <button

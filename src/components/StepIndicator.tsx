@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Upload, Brain, FileText, PenLine } from "lucide-react";
+import { Upload, Brain, FileText } from "lucide-react";
 import type { Step } from "@/app/page";
 
 interface StepIndicatorProps {
@@ -12,11 +12,10 @@ interface StepIndicatorProps {
 const STEPS = [
   { id: "upload" as Step, label: "Upload", icon: Upload },
   { id: "solving" as Step, label: "Analisis AI", icon: Brain },
-  { id: "solution" as Step, label: "Jawaban", icon: FileText },
-  { id: "handwriting" as Step, label: "Tulisan Tangan", icon: PenLine },
+  { id: "flashcards" as Step, label: "Flashcard", icon: FileText },
 ];
 
-const STEP_ORDER: Step[] = ["upload", "solving", "solution", "handwriting"];
+const STEP_ORDER: Step[] = ["upload", "solving", "flashcards"];
 
 export function StepIndicator({ currentStep, className }: StepIndicatorProps) {
   const currentIndex = STEP_ORDER.indexOf(currentStep);

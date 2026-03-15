@@ -10,7 +10,7 @@
 
 ## ✨ Fitur Utama
 
-- 📸 **Upload soal PR** — JPG, PNG, WEBP, HEIC (max 5MB)
+- 📸 **Upload soal PR** — JPG, PNG, WEBP, HEIC, PDF (max 15MB)
 - 🤖 **AI GPT-4o Vision** — Analisis & selesaikan soal step-by-step dalam Bahasa Indonesia
 - 📐 **LaTeX Math Support** — Render rumus matematika otomatis (KaTeX)
 - ✏️ **Edit jawaban** — Edit teks sebelum dikonversi
