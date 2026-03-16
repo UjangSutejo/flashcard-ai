@@ -45,7 +45,7 @@
  
 ## Live Demo
  
-[flashcard-ai.vercel.app](https://flashcard-ai.vercel.app)
+[flashcard-ai.vercel.app]([https://flashcard-ai.vercel.app](https://flashcard-ai-five.vercel.app/))
  
 ---
  
